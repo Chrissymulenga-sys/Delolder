@@ -1,0 +1,34 @@
+dry=0
+days=""
+dirs=()
+endopts=0
+for arg in "$@"; do 
+    if [ $endopts -eq 0 ] && [ "$arg" = "--" ]; then 
+	endopts=1
+    elif [ $endopts -eq 0 ] && [ "$arg" = "-v" ]; then
+	verbose=1
+    elif [ $endopts -eq 0 ] && [ "$arg" = "-d" ]; then
+	dry=1
+    elif [ $endopts -eq 0 ] && [[ "$arg" == -* ]]; then
+	echo "Error: unknown option $arg" >&2
+	exit 1
+    elif [ -z "$days" ]; then
+	days="$arg"
+    else
+	dirs+=("$arg")
+    fi
+done
+if ! [[ "$days" =~ ^[0-9]+$ ]] || [ ${#dirs[@]} -eq 0 ]; then
+    echo "usage: delolder [-v|-d] N [--] dirs">&2
+    exit 1
+fi
+for i in "${!dirs[@]}"; do
+    [[ "${dirs[i]}" == -* ]] && dirs[i]="./${dirs[i]}"
+done
+act=(-delete)
+if [ "$dry" = 1 ]; then
+act=(-print)
+elif [ "$verbose" = 1 ]; then
+    act=(-print -delete)
+fi
+find "${dirs[@]}" -type f -mtime +"$days" 
